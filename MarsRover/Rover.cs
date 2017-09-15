@@ -1,78 +1,46 @@
 ﻿using System;
-using MarsRover.Exceptions;
 
 namespace MarsRover
 {
-    public class Rover : IRover
+    public class Rover
     {
-        private Location location;
-        private Bearings bearing;
-        public Rover(Location startLocation, Bearings bearing)
+        public Position TurnLeft(Position position)
         {
-            this.location = startLocation;
-            this.bearing = bearing;
-        }
-
-        public Location CurrentLocation
-        {
-            get => location;
-        }
-
-        public Location PredictedLocation
-        {
-            get
-            {
-                switch (bearing)
-                {
-                    case Bearings.North:
-                        return new Location(location.X, location.Y + 1);
-                    case Bearings.East:
-                        return new Location(location.X + 1, location.Y);
-                    case Bearings.South:
-                        return new Location(location.X, location.Y - 1);
-                    case Bearings.West:
-                        return new Location(location.X - 1, location.Y);
-                    default:
-                        throw new UnknownBearingException($"Unknown bearing {bearing}");
-                }
-            }
-        }
-
-        public string State {
-            get => $"{location.X} {location.Y} {bearing.ToString()[0]}";
-        }
-
-        public void TurnLeft()
-        {
-            bearing = bearing == Bearings.North
+            var bearing = position.Bearing == Bearings.North
                 ? Bearings.West
-                : bearing - 1;
+                : position.Bearing - 1;
+            return new Position(position.X, position.Y, bearing);
         }
 
-        public void TurnRight()
+        public Position TurnRight(Position position)
         {
-            bearing = bearing == Bearings.West
-                ? bearing = Bearings.North
-                : bearing + 1;
+            var bearing = position.Bearing == Bearings.West
+                ? Bearings.North
+                : position.Bearing + 1;
+            return new Position(position.X, position.Y, bearing);
         }
 
-        public void Move()
+        public Position Move(Position position)
         {
-            switch (bearing)
+            int x = position.X;
+            int y = position.Y;
+
+            switch (position.Bearing)
             {
                 case Bearings.North:
-                    location.Y++;
+                    y++;
                     break;
                 case Bearings.East:
-                    location.X++;
+                    x++;
                     break;
                 case Bearings.South:
-                    location.Y--;
+                    y--;
                     break;
                 case Bearings.West:
-                    location.X--;
+                    x--;
                     break;
             }
+            return new Position(x, y, position.Bearing);
         }
     }
 }

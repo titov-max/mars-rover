@@ -1,23 +1,18 @@
 using System;
 using System.Collections.Generic;
-using MarsRover.Exceptions;
+using MarsRover.CustomExceptions;
 
 namespace MarsRover
 {
-    public class Dispatcher : IDispatcher
+    public class Dispatcher
     {
         private int gridX;
         private int gridY;
-        private bool[,] grid;
-        private List<Rover> rovers = new List<Rover>();
-        private Dictionary<char, Bearings> bearingsMap = new Dictionary<char, Bearings>()
-        {
-            { 'N', Bearings.North },
-            { 'E', Bearings.East },
-            { 'S', Bearings.South },
-            { 'W', Bearings.West }
-        };
-        private Dictionary<char, Commands> commandsMap = new Dictionary<char, Commands>()
+        private Object moveLock = new Object();
+        private readonly bool[,] grid;
+        private readonly List<RoverPosition> roverPositions = new List<RoverPosition>();
+
+        private readonly Dictionary<char, Commands> commandsMap = new Dictionary<char, Commands>()
         {
             { 'L', Commands.Left },
             { 'R', Commands.Right },
@@ -31,75 +26,81 @@ namespace MarsRover
             this.grid = new bool[gridX + 1, gridY + 1];
         }
 
-        public void AddRover(int x, int y, char bearingSignal)
+        public void LaunchRover(Rover rover, Position position)
         {
-            if (x > gridX || y > gridY)
+            if (position.X > gridX || position.Y > gridY)
             {
-                throw new OutOfGridException($"Coordinates ({x},{y}) out of grid ({gridX},{gridY})");
+                throw new ArgumentOutOfRangeException($"Coordinates ({position.X},{position.Y}) out of grid ({gridX},{gridY})");
             }
 
-            if (!bearingsMap.ContainsKey(bearingSignal))
+            if (grid[position.X, position.Y])
             {
-                throw new UnknownBearingException($"Unknown bearing signal {bearingSignal}");
+                throw new DispatcherException($"Coordinates ({position.X},{position.Y}) had been already occupied by another rover");
             }
 
-            if (grid[x, y])
-            {
-                throw new GridPointOccupiedException($"Coordinates ({x},{y}) had been already occupied by another rover");
-            }
-
-            rovers.Add(
-                new Rover(
-                    new Location(x, y),
-                    bearingsMap[bearingSignal]
+            roverPositions.Add(
+                new RoverPosition(
+                    rover,
+                    position
                 )
             );
 
-            grid[x, y] = true;
+            grid[position.X, position.Y] = true;
         }
 
-        public string ExecuteQueue(int roverIndex, string commandQueue) {
+        public bool IsGridPoint(Position position)
+        {
+            return 0 <= position.X && position.X <= gridX
+                && 0 <= position.Y && position.Y <= gridY;
+        }
+
+        public string ExecuteQueue(Rover rover, string commandQueue)
+        {
             foreach (var command in commandQueue)
             {
-                SendCommand(roverIndex, command);
+                SendCommand(rover, command);
             }
-            return GetRoverState(roverIndex);
+            return GetRoverState(rover);
         }
 
-        public string SendCommand(int roverIndex, char commandSignal)
+        public string SendCommand(Rover rover, char commandSignal)
         {
             if (!commandsMap.ContainsKey(commandSignal))
             {
                 throw new UnknownCommandException($"Unknown command signal {commandSignal}");
             }
 
-            var rover = rovers[roverIndex];
+            var roverPosition = roverPositions.Find(rp => rp.Rover == rover);
             var command = commandsMap[commandSignal];
             switch (command)
             {
                 case Commands.Left:
-                    rover.TurnLeft();
+                    roverPosition.Current = rover.TurnLeft(roverPosition.Current);
                     break;
                 case Commands.Right:
-                    rover.TurnRight();
+                    roverPosition.Current = rover.TurnRight(roverPosition.Current);
                     break;
                 case Commands.Move:
-                    if (rover.PredictedLocation.BelongsGrid(gridX, gridY) &&
-                        !grid[rover.PredictedLocation.X, rover.PredictedLocation.Y]
-                    )
+                    lock (moveLock)
                     {
-                        grid[rover.CurrentLocation.X, rover.CurrentLocation.Y] = false;
-                        rover.Move();
-                        grid[rover.CurrentLocation.X, rover.CurrentLocation.Y] = true;
+                        if (IsGridPoint(roverPosition.Next) &&
+                            !grid[roverPosition.Next.X, roverPosition.Next.Y]
+                        )
+                        {
+                            grid[roverPosition.Current.X, roverPosition.Current.Y] = false;
+                            roverPosition.Current = rover.Move(roverPosition.Current);
+                            grid[roverPosition.Current.X, roverPosition.Current.Y] = true;
+                        }
                     }
                     break;
             }
 
-            return GetRoverState(roverIndex);
+            return GetRoverState(rover);
         }
 
-        public string GetRoverState(int roverIndex) {
-            return rovers[roverIndex].State;
+        public string GetRoverState(Rover rover)
+        {
+            return roverPositions.Find(rp => rp.Rover == rover)?.State;
         }
     }
 }
