@@ -1,24 +1,27 @@
 using System;
 using Xunit;
 using MarsRover;
-using MarsRover.Exceptions;
+using MarsRover.CustomExceptions;
 
 namespace MarsRover.Tests
 {
     public class DispatcherTest
     {
         private Dispatcher dispatcher;
+        private Rover rover;
 
         public DispatcherTest() {
             dispatcher = new Dispatcher(5, 5);
+            rover = new Rover();
         }
         
         [Fact]
         public void ShouldAppropriatelyMoveFirstRover()
         {
-            dispatcher.AddRover(1, 2, 'N');
+            var position = new Position(1, 2, 'N');
+            dispatcher.LaunchRover(rover, position);
             
-            var result = dispatcher.ExecuteQueue(0, "LMLMLMLMM");
+            var result = dispatcher.ExecuteQueue(rover, "LMLMLMLMM");
 
             Assert.Equal("1 3 N", result);
         }
@@ -26,9 +29,10 @@ namespace MarsRover.Tests
         [Fact]
         public void ShouldAppropriatelyMoveSecondRover()
         {
-            dispatcher.AddRover(3, 3, 'E');
+            var position = new Position(3, 3, 'E');
+            dispatcher.LaunchRover(rover, position);
             
-            var result = dispatcher.ExecuteQueue(0, "MMRMMRMRRM");
+            var result = dispatcher.ExecuteQueue(rover, "MMRMMRMRRM");
 
             Assert.Equal("5 1 E", result);
         }
@@ -36,9 +40,10 @@ namespace MarsRover.Tests
         [Fact]
         public void ShouldMoveRightByOnePoint()
         {
-            dispatcher.AddRover(3, 3, 'E');
+            var position = new Position(3, 3, 'E');
+            dispatcher.LaunchRover(rover, position);
             
-            var result = dispatcher.SendCommand(0, 'M');
+            var result = dispatcher.SendCommand(rover, 'M');
 
             Assert.Equal("4 3 E", result);
         }
@@ -46,9 +51,10 @@ namespace MarsRover.Tests
         [Fact]
         public void ShouldMoveLeftByOnePoint()
         {
-            dispatcher.AddRover(3, 3, 'W');
+            var position = new Position(3, 3, 'W');
+            dispatcher.LaunchRover(rover, position);
             
-            var result = dispatcher.SendCommand(0, 'M');
+            var result = dispatcher.SendCommand(rover, 'M');
 
             Assert.Equal("2 3 W", result);
         }
@@ -56,9 +62,10 @@ namespace MarsRover.Tests
         [Fact]
         public void ShouldMoveUpByOnePoint()
         {
-            dispatcher.AddRover(3, 3, 'N');
+            var position = new Position(3, 3, 'N');
+            dispatcher.LaunchRover(rover, position);
             
-            var result = dispatcher.SendCommand(0, 'M');
+            var result = dispatcher.SendCommand(rover, 'M');
 
             Assert.Equal("3 4 N", result);
         }
@@ -66,9 +73,10 @@ namespace MarsRover.Tests
         [Fact]
         public void ShouldMoveDownByOnePoint()
         {
-            dispatcher.AddRover(3, 3, 'S');
+            var position = new Position(3, 3, 'S');
+            dispatcher.LaunchRover(rover, position);
             
-            var result = dispatcher.SendCommand(0, 'M');
+            var result = dispatcher.SendCommand(rover, 'M');
 
             Assert.Equal("3 2 S", result);
         }
@@ -76,36 +84,36 @@ namespace MarsRover.Tests
         [Fact]
         public void ShouldThrowExceptionWhenIncorrectBearingPassed()
         {
-            Assert.Throws<UnknownBearingException>(() => dispatcher.AddRover(0, 0, 'X'));
+            Assert.Throws<UnknownBearingException>(() => dispatcher.LaunchRover(rover, new Position(0, 0, 'X')));
         }
 
         [Fact]
         public void ShouldThrowExceptionWhenCoordinatesOutOfGrid()
         {
-            Assert.Throws<OutOfGridException>(() => dispatcher.AddRover(6, 6, 'E'));
+            Assert.Throws<ArgumentOutOfRangeException>(() => dispatcher.LaunchRover(rover, new Position(6, 6, 'E')));
         }
 
         [Fact]
         public void ShouldThrowExceptionWhenPlaceIsOccuppied()
         {
-            dispatcher.AddRover(3, 3, 'N');
-            Assert.Throws<GridPointOccupiedException>(() => dispatcher.AddRover(3, 3, 'S'));
+            dispatcher.LaunchRover(rover, new Position(3, 3, 'N'));
+            Assert.Throws<DispatcherException>(() => dispatcher.LaunchRover(new Rover(), new Position(3, 3, 'S')));
         }
 
         [Fact]
         public void ShouldThrowExceptionWhenIncorrectCommandPassed()
         {
-            dispatcher.AddRover(0, 0, 'N');
-            Assert.Throws<UnknownCommandException>(() => dispatcher.SendCommand(0, 'X'));
+            dispatcher.LaunchRover(rover, new Position(0, 0, 'N'));
+            Assert.Throws<UnknownCommandException>(() => dispatcher.SendCommand(rover, 'X'));
         }
 
         [Fact]
         public void ShouldKeepLocationWhenPointIsOccupiedByAnotherRover()
         {
-            dispatcher.AddRover(3, 3, 'N');
-            dispatcher.AddRover(2, 3, 'E');
+            dispatcher.LaunchRover(new Rover(), new Position(3, 3, 'N'));
+            dispatcher.LaunchRover(rover, new Position(2, 3, 'E'));
 
-            var result = dispatcher.SendCommand(1, 'M');
+            var result = dispatcher.SendCommand(rover, 'M');
 
             Assert.Equal("2 3 E", result);
         }
@@ -114,9 +122,10 @@ namespace MarsRover.Tests
         [InlineData("M")]
         [InlineData("LM")]
         public void ShouldKeepLocationWhenMoveOutOfGrid(string commandQueue) {
-            dispatcher.AddRover(0, 0, 'W');
+            var position = new Position(0, 0, 'W');
+            dispatcher.LaunchRover(rover, position);
 
-            var result = dispatcher.ExecuteQueue(0, commandQueue);
+            var result = dispatcher.ExecuteQueue(rover, commandQueue);
 
             Assert.Equal("0 0", result.Substring(0, 3));
         }

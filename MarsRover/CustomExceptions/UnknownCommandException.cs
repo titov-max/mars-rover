@@ -1,6 +1,6 @@
 using System;
 
-namespace MarsRover.Exceptions
+namespace MarsRover.CustomExceptions
 {
     public class UnknownCommandException : Exception 
     {

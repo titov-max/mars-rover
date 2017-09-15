@@ -1,51 +1,61 @@
 using System;
 using Xunit;
 using MarsRover;
-using MarsRover.Exceptions;
+using MarsRover.CustomExceptions;
 
 namespace MarsRover.Tests
 {
     public class RoverTest
     {
         private Rover rover;
+        private Position position;
 
         public RoverTest() {
-            rover = new Rover(new Location(3, 3), Bearings.North);
+            rover = new Rover();
+            position = new Position(3, 3, 'N');
         }
         
         [Fact]
         public void ShouldBeTurnedToWest()
         {
-            rover.TurnLeft();
+            var newPosition = rover.TurnLeft(position);
 
-            Assert.Equal("3 3 W", rover.State);
+            Assert.Equal(3, newPosition.X);
+            Assert.Equal(3, newPosition.Y);
+            Assert.Equal(Bearings.West, newPosition.Bearing);
         }
 
         [Fact]
         public void ShouldBeTurnedToEst()
         {
-            rover.TurnRight();
+            var newPosition = rover.TurnRight(position);
 
-            Assert.Equal("3 3 E", rover.State);
+            Assert.Equal(3, newPosition.X);
+            Assert.Equal(3, newPosition.Y);
+            Assert.Equal(Bearings.East, newPosition.Bearing);
         }
 
         [Fact]
         public void ShouldBeTurnedRound()
         {
-            rover.TurnRight();
-            rover.TurnRight();
-            rover.TurnRight();
-            rover.TurnRight();
+            Position newPosition = new Position(position.X, position.Y, position.Bearing);
+            for (var i = 0; i < 4; i++) {
+                newPosition = rover.TurnRight(newPosition);
+            }
 
-            Assert.Equal("3 3 N", rover.State);
+            Assert.Equal(3, newPosition.X);
+            Assert.Equal(3, newPosition.Y);
+            Assert.Equal(Bearings.North, newPosition.Bearing);
         }
 
         [Fact]
         public void ShouldBeMovedToNorth()
         {
-            rover.Move();
+            var newPosition = rover.Move(position);
 
-            Assert.Equal("3 4 N", rover.State);
+            Assert.Equal(3, newPosition.X);
+            Assert.Equal(4, newPosition.Y);
+            Assert.Equal(Bearings.North, newPosition.Bearing);
         }
     }
 }
