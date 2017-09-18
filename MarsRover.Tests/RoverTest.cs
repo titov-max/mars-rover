@@ -1,7 +1,6 @@
 using System;
 using Xunit;
 using MarsRover;
-using MarsRover.CustomExceptions;
 
 namespace MarsRover.Tests
 {

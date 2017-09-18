@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using MarsRover.CustomExceptions;
 
 namespace MarsRover
 {
@@ -26,7 +25,7 @@ namespace MarsRover
             Y = y;
             if (!bearingsMap.ContainsKey(bearing))
             {
-                throw new UnknownBearingException($"Unknown bearing {bearing}");
+                throw new Exception($"Unknown bearing {bearing}");
             }
             Bearing = bearingsMap[bearing];
         }

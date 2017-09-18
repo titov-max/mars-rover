@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using MarsRover.CustomExceptions;
 
 namespace MarsRover
 {
@@ -30,12 +29,12 @@ namespace MarsRover
         {
             if (position.X > gridX || position.Y > gridY)
             {
-                throw new ArgumentOutOfRangeException($"Coordinates ({position.X},{position.Y}) out of grid ({gridX},{gridY})");
+                throw new Exception($"Coordinates ({position.X}, {position.Y}) out of grid ({gridX}, {gridY})");
             }
 
             if (grid[position.X, position.Y])
             {
-                throw new DispatcherException($"Coordinates ({position.X},{position.Y}) had been already occupied by another rover");
+                throw new Exception($"Coordinates ({position.X}, {position.Y}) is already occupied by another rover");
             }
 
             roverPositions.Add(
@@ -56,18 +55,19 @@ namespace MarsRover
 
         public string ExecuteQueue(Rover rover, string commandQueue)
         {
+            string state = "";
             foreach (var command in commandQueue)
             {
-                SendCommand(rover, command);
+                state = SendCommand(rover, command);
             }
-            return GetRoverState(rover);
+            return state;
         }
 
         public string SendCommand(Rover rover, char commandSignal)
         {
             if (!commandsMap.ContainsKey(commandSignal))
             {
-                throw new UnknownCommandException($"Unknown command signal {commandSignal}");
+                throw new Exception($"Unknown command {commandSignal}");
             }
 
             var roverPosition = roverPositions.Find(rp => rp.Rover == rover);
@@ -83,24 +83,20 @@ namespace MarsRover
                 case Commands.Move:
                     lock (moveLock)
                     {
-                        if (IsGridPoint(roverPosition.Next) &&
-                            !grid[roverPosition.Next.X, roverPosition.Next.Y]
+                        var next = roverPosition.Rover.Move(roverPosition.Current);
+                        if (IsGridPoint(next) &&
+                            !grid[next.X, next.Y]
                         )
                         {
                             grid[roverPosition.Current.X, roverPosition.Current.Y] = false;
-                            roverPosition.Current = rover.Move(roverPosition.Current);
+                            roverPosition.Current = next;
                             grid[roverPosition.Current.X, roverPosition.Current.Y] = true;
                         }
                     }
                     break;
             }
 
-            return GetRoverState(rover);
-        }
-
-        public string GetRoverState(Rover rover)
-        {
-            return roverPositions.Find(rp => rp.Rover == rover)?.State;
+            return roverPosition.State;
         }
     }
 }

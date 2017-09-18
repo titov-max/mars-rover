@@ -1,7 +1,6 @@
 using System;
 using Xunit;
 using MarsRover;
-using MarsRover.CustomExceptions;
 
 namespace MarsRover.Tests
 {
@@ -84,27 +83,37 @@ namespace MarsRover.Tests
         [Fact]
         public void ShouldThrowExceptionWhenIncorrectBearingPassed()
         {
-            Assert.Throws<UnknownBearingException>(() => dispatcher.LaunchRover(rover, new Position(0, 0, 'X')));
+            Exception ex = Assert.Throws<Exception>(() => dispatcher.LaunchRover(rover, new Position(0, 0, 'X')));
+
+            Assert.Equal("Unknown bearing X", ex.Message);
         }
 
         [Fact]
         public void ShouldThrowExceptionWhenCoordinatesOutOfGrid()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(() => dispatcher.LaunchRover(rover, new Position(6, 6, 'E')));
+            Exception ex = Assert.Throws<Exception>(() => dispatcher.LaunchRover(rover, new Position(6, 6, 'E')));
+
+            Assert.Equal("Coordinates (6, 6) out of grid (5, 5)", ex.Message);
         }
 
         [Fact]
         public void ShouldThrowExceptionWhenPlaceIsOccuppied()
         {
             dispatcher.LaunchRover(rover, new Position(3, 3, 'N'));
-            Assert.Throws<DispatcherException>(() => dispatcher.LaunchRover(new Rover(), new Position(3, 3, 'S')));
+
+            Exception ex = Assert.Throws<Exception>(() => dispatcher.LaunchRover(new Rover(), new Position(3, 3, 'S')));
+
+            Assert.Equal("Coordinates (3, 3) is already occupied by another rover", ex.Message);
         }
 
         [Fact]
         public void ShouldThrowExceptionWhenIncorrectCommandPassed()
         {
             dispatcher.LaunchRover(rover, new Position(0, 0, 'N'));
-            Assert.Throws<UnknownCommandException>(() => dispatcher.SendCommand(rover, 'X'));
+
+            Exception ex = Assert.Throws<Exception>(() => dispatcher.SendCommand(rover, 'X'));
+
+            Assert.Equal("Unknown command X", ex.Message);
         }
 
         [Fact]
