@@ -9,7 +9,7 @@ namespace MarsRover
         private int gridY;
         private Object moveLock = new Object();
         private readonly bool[,] grid;
-        private readonly List<RoverPosition> roverPositions = new List<RoverPosition>();
+        private readonly List<Rover> rovers = new List<Rover>();
 
         private readonly Dictionary<char, Commands> commandsMap = new Dictionary<char, Commands>()
         {
@@ -25,7 +25,7 @@ namespace MarsRover
             this.grid = new bool[gridX + 1, gridY + 1];
         }
 
-        public void LaunchRover(Rover rover, Position position)
+        public Rover LaunchRover(Position position)
         {
             if (position.X > gridX || position.Y > gridY)
             {
@@ -37,14 +37,12 @@ namespace MarsRover
                 throw new Exception($"Coordinates ({position.X}, {position.Y}) is already occupied by another rover");
             }
 
-            roverPositions.Add(
-                new RoverPosition(
-                    rover,
-                    position
-                )
-            );
+            var rover = new Rover(position);
+            rovers.Add(rover);
 
             grid[position.X, position.Y] = true;
+
+            return rover;
         }
 
         public bool IsGridPoint(Position position)
@@ -70,33 +68,33 @@ namespace MarsRover
                 throw new Exception($"Unknown command {commandSignal}");
             }
 
-            var roverPosition = roverPositions.Find(rp => rp.Rover == rover);
-            var command = commandsMap[commandSignal];
-            switch (command)
+            lock (moveLock)
             {
-                case Commands.Left:
-                    roverPosition.Current = rover.TurnLeft(roverPosition.Current);
-                    break;
-                case Commands.Right:
-                    roverPosition.Current = rover.TurnRight(roverPosition.Current);
-                    break;
-                case Commands.Move:
-                    lock (moveLock)
-                    {
-                        var next = roverPosition.Rover.Move(roverPosition.Current);
-                        if (IsGridPoint(next) &&
-                            !grid[next.X, next.Y]
+                var command = commandsMap[commandSignal];
+                switch (command)
+                {
+                    case Commands.Left:
+                        rover.TurnLeft();
+                        break;
+                    case Commands.Right:
+                        rover.TurnRight();
+                        break;
+                    case Commands.Move:
+
+                        if (IsGridPoint(rover.Next) &&
+                            !grid[rover.Next.X, rover.Next.Y]
                         )
                         {
-                            grid[roverPosition.Current.X, roverPosition.Current.Y] = false;
-                            roverPosition.Current = next;
-                            grid[roverPosition.Current.X, roverPosition.Current.Y] = true;
+                            grid[rover.Current.X, rover.Current.Y] = false;
+                            rover.Move();
+                            grid[rover.Current.X, rover.Current.Y] = true;
                         }
-                    }
-                    break;
+
+                        break;
+                }
             }
 
-            return roverPosition.State;
+            return rover.State;
         }
     }
 }

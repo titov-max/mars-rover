@@ -7,17 +7,17 @@ namespace MarsRover.Tests
     public class RoverTest
     {
         private Rover rover;
-        private Position position;
 
         public RoverTest() {
-            rover = new Rover();
-            position = new Position(3, 3, 'N');
+            rover = new Rover(new Position(3, 3, 'N'));
         }
         
         [Fact]
         public void ShouldBeTurnedToWest()
         {
-            var newPosition = rover.TurnLeft(position);
+            rover.TurnLeft();
+
+            var newPosition = rover.Current;
 
             Assert.Equal(3, newPosition.X);
             Assert.Equal(3, newPosition.Y);
@@ -27,7 +27,9 @@ namespace MarsRover.Tests
         [Fact]
         public void ShouldBeTurnedToEst()
         {
-            var newPosition = rover.TurnRight(position);
+            rover.TurnRight();
+
+            var newPosition = rover.Current;
 
             Assert.Equal(3, newPosition.X);
             Assert.Equal(3, newPosition.Y);
@@ -37,10 +39,11 @@ namespace MarsRover.Tests
         [Fact]
         public void ShouldBeTurnedRound()
         {
-            Position newPosition = new Position(position.X, position.Y, position.Bearing);
             for (var i = 0; i < 4; i++) {
-                newPosition = rover.TurnRight(newPosition);
+                rover.TurnRight();
             }
+
+            var newPosition = rover.Current;
 
             Assert.Equal(3, newPosition.X);
             Assert.Equal(3, newPosition.Y);
@@ -50,7 +53,9 @@ namespace MarsRover.Tests
         [Fact]
         public void ShouldBeMovedToNorth()
         {
-            var newPosition = rover.Move(position);
+            rover.Move();
+
+            var newPosition = rover.Current;
 
             Assert.Equal(3, newPosition.X);
             Assert.Equal(4, newPosition.Y);

@@ -4,43 +4,52 @@ namespace MarsRover
 {
     public class Rover
     {
-        public Position TurnLeft(Position position)
+        public Rover(Position position)
         {
-            var bearing = position.Bearing == Bearings.North
-                ? Bearings.West
-                : position.Bearing - 1;
-            return new Position(position.X, position.Y, bearing);
+            this.Current = position;
         }
 
-        public Position TurnRight(Position position)
-        {
-            var bearing = position.Bearing == Bearings.West
-                ? Bearings.North
-                : position.Bearing + 1;
-            return new Position(position.X, position.Y, bearing);
-        }
+        public Position Current { get; set; }
 
-        public Position Move(Position position)
+        public Position Next
         {
-            int x = position.X;
-            int y = position.Y;
-
-            switch (position.Bearing)
+            get
             {
-                case Bearings.North:
-                    y++;
-                    break;
-                case Bearings.East:
-                    x++;
-                    break;
-                case Bearings.South:
-                    y--;
-                    break;
-                case Bearings.West:
-                    x--;
-                    break;
+                switch (Current.Bearing)
+                {
+                    case Bearings.North:
+                        return new Position(Current.X, Current.Y + 1, Current.Bearing);
+                    case Bearings.East:
+                        return new Position(Current.X + 1, Current.Y, Current.Bearing);
+                    case Bearings.South:
+                        return new Position(Current.X, Current.Y - 1, Current.Bearing);
+                    case Bearings.West:
+                        return new Position(Current.X - 1, Current.Y, Current.Bearing);
+                    default:
+                        throw new Exception($"Unknown bearing ${Current.Bearing}");
+                }
             }
-            return new Position(x, y, position.Bearing);
+        }
+
+        public string State => $"{Current.X} {Current.Y} {Current.Bearing.ToString()[0]}";
+
+        public void TurnLeft()
+        {
+            Current.Bearing = Current.Bearing == Bearings.North
+                ? Bearings.West
+                : Current.Bearing - 1;
+        }
+
+        public void TurnRight()
+        {
+            Current.Bearing = Current.Bearing == Bearings.West
+                ? Bearings.North
+                : Current.Bearing + 1;
+        }
+
+        public void Move()
+        {
+            Current = Next;
         }
     }
 }
